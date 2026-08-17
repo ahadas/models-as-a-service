@@ -396,6 +396,8 @@ rules:
   verbs:
   - delete
   - get
+  - patch
+  - create
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -427,3 +429,26 @@ rules:
   - list
   - patch
   - watch
+- verbs:
+  - use
+  apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - nonroot-v2
+- verbs:
+  - create
+  - get
+  apiGroups:
+  - loki.grafana.com
+  resources:
+  - application
+  resourceNames:
+  - logs
+- verbs:
+  - get
+  apiGroups:
+  - ''
+  resources:
+  - pods/log
