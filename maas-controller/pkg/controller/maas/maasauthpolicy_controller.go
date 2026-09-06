@@ -842,6 +842,9 @@ func (r *MaaSAuthPolicyReconciler) buildGatewayAuthPolicySpec(oidc *oidcConfig, 
 					map[string]any{
 						"predicate": `!("x-maas-group" in request.headers)`,
 					},
+					map[string]any{
+						"predicate": `!("x-maas-keyname" in request.headers)`,
+					},
 				},
 			},
 		},
@@ -1074,6 +1077,19 @@ allow {
 						"plain": map[string]any{
 							"expression": celSubscription,
 						},
+						"metrics":  false,
+						"priority": int64(0),
+					},
+					"X-MaaS-KeyName": map[string]any{
+						"when": []any{
+							map[string]any{
+								"predicate": celIsAPIKey,
+							},
+						},
+						"plain": map[string]any{
+							"expression": `auth.metadata.apiKeyValidation.keyName`,
+						},
+						"key":      "x-maas-keyname",
 						"metrics":  false,
 						"priority": int64(0),
 					},
