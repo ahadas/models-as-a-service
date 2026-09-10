@@ -7,6 +7,15 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// usageLogsServiceNamespaceAttr is the OTel resource attribute carrying the namespace that
+// usage log records are attributed to.
+const usageLogsServiceNamespaceAttr = "service.namespace"
+
+// otelAccessLoggerName is the Envoy access logger that carries resource_attributes.
+// HttpConnectionManager.access_log is a repeated field, and resource_attributes exists only
+// on OpenTelemetryAccessLogConfig — other logger types must be left alone.
+const otelAccessLoggerName = "envoy.access_loggers.open_telemetry"
+
 // PatchUsageLogsEnvoyFilterWorkloadSelector sets spec.workloadSelector.labels["gateway.networking.k8s.io/gateway-name"]
 // to the tenant's gateway so the EnvoyFilter applies only to traffic through this tenant's gateway.
 func PatchUsageLogsEnvoyFilterWorkloadSelector(ef *unstructured.Unstructured, gatewayName string) error {
@@ -18,15 +27,6 @@ func PatchUsageLogsEnvoyFilterWorkloadSelector(ef *unstructured.Unstructured, ga
 	unstructured.RemoveNestedField(ef.Object, "spec", "targetRefs")
 	return nil
 }
-
-// usageLogsServiceNamespaceAttr is the OTel resource attribute carrying the namespace that
-// usage log records are attributed to.
-const usageLogsServiceNamespaceAttr = "service.namespace"
-
-// otelAccessLoggerName is the Envoy access logger that carries resource_attributes.
-// HttpConnectionManager.access_log is a repeated field, and resource_attributes exists only
-// on OpenTelemetryAccessLogConfig — other logger types must be left alone.
-const otelAccessLoggerName = "envoy.access_loggers.open_telemetry"
 
 // PatchUsageLogsServiceNamespace sets the service.namespace resource attribute on the OTel
 // access logger in the EnvoyFilter to the tenant's own namespace.

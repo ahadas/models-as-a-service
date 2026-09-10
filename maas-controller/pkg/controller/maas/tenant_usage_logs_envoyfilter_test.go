@@ -305,8 +305,6 @@ func TestTenantEnsureUsageLogsEnvoyFilter(t *testing.T) {
 		// service.namespace tracks the per-tenant workload namespace, not the gateway
 		// namespace baked into the manifest nor the AITenant infra namespace.
 		g.Expect(usageLogsServiceNamespace(g, ef)).To(Equal("ai-tenant-redteam"))
-		g.Expect(usageLogsServiceNamespace(g, ef)).NotTo(Equal(usageLogsTestGatewayNS))
-		g.Expect(usageLogsServiceNamespace(g, ef)).NotTo(Equal(usageLogsTestAITenantNS))
 	})
 
 	t.Run("deletes existing when disabled", func(t *testing.T) {
