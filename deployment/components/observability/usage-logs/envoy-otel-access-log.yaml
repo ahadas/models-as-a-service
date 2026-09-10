@@ -498,6 +498,3 @@ spec:
                 - key: service.name
                   value:
                     string_value: models-as-a-service
-                - key: service.namespace
-                  value:
-                    string_value: openshift-ingress

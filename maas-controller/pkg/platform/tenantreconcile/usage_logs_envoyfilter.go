@@ -28,13 +28,11 @@ func PatchUsageLogsEnvoyFilterWorkloadSelector(ef *unstructured.Unstructured, ga
 	return nil
 }
 
-// PatchUsageLogsServiceNamespace sets the service.namespace resource attribute on the OTel
-// access logger in the EnvoyFilter to the tenant's own namespace.
-//
-// The manifest hardcodes the gateway namespace (openshift-ingress) because the EnvoyFilter is
-// applied there, but usage records must be attributed to the per-tenant workload namespace
-// (e.g. ai-tenant-redteam, or models-as-a-service for the default tenant) — not the gateway
-// namespace and not the infra namespace holding the AITenant CRs.
+// PatchUsageLogsServiceNamespace appends the service.namespace resource attribute on the OTel
+// access logger. The manifest does not include this attribute; it is always added here so
+// usage records are attributed to the per-tenant workload namespace (e.g. ai-tenant-redteam,
+// or models-as-a-service for the default tenant) rather than the gateway namespace the
+// EnvoyFilter lives in.
 func PatchUsageLogsServiceNamespace(ef *unstructured.Unstructured, namespace string) error {
 	if namespace == "" {
 		return errors.New("service namespace must not be empty")
@@ -71,7 +69,7 @@ func PatchUsageLogsServiceNamespace(ef *unstructured.Unstructured, namespace str
 			if name, _, _ := unstructured.NestedString(accessLogEntry, "name"); name != otelAccessLoggerName {
 				continue
 			}
-			if err := setUsageLogsResourceAttribute(accessLogEntry, usageLogsServiceNamespaceAttr, namespace); err != nil {
+			if err := appendUsageLogsResourceAttribute(accessLogEntry, usageLogsServiceNamespaceAttr, namespace); err != nil {
 				return err
 			}
 			patched = true
@@ -83,9 +81,9 @@ func PatchUsageLogsServiceNamespace(ef *unstructured.Unstructured, namespace str
 	return nil
 }
 
-// setUsageLogsResourceAttribute upserts a string resource attribute on a single OTel access log
-// entry, overwriting the value when the key is already present and appending it otherwise.
-func setUsageLogsResourceAttribute(accessLogEntry map[string]any, key, value string) error {
+// appendUsageLogsResourceAttribute appends a string resource attribute on a single OTel access
+// log entry. The manifest is not expected to already contain this key.
+func appendUsageLogsResourceAttribute(accessLogEntry map[string]any, key, value string) error {
 	raw, found, err := unstructured.NestedFieldNoCopy(accessLogEntry, "typed_config", "resource_attributes", "values")
 	if err != nil {
 		return fmt.Errorf("read resource_attributes.values: %w", err)
@@ -93,20 +91,6 @@ func setUsageLogsResourceAttribute(accessLogEntry map[string]any, key, value str
 	values, ok := raw.([]any)
 	if !found || !ok {
 		values = nil
-	}
-
-	for _, v := range values {
-		attr, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		if k, _, _ := unstructured.NestedString(attr, "key"); k != key {
-			continue
-		}
-		if err := unstructured.SetNestedField(attr, value, "value", "string_value"); err != nil {
-			return fmt.Errorf("set resource attribute %s: %w", key, err)
-		}
-		return nil
 	}
 
 	values = append(values, map[string]any{

@@ -103,13 +103,12 @@ func otelAccessLogEntry(resourceAttributes []any) map[string]any {
 }
 
 func TestPatchUsageLogsServiceNamespace(t *testing.T) {
-	t.Run("overwrites the existing service.namespace value", func(t *testing.T) {
+	t.Run("appends service.namespace next to existing service.name", func(t *testing.T) {
 		g := NewWithT(t)
 
 		ef := usageLogsEFWithAccessLog([]any{
 			otelAccessLogEntry([]any{
 				map[string]any{"key": "service.name", "value": map[string]any{"string_value": "models-as-a-service"}},
-				map[string]any{"key": "service.namespace", "value": map[string]any{"string_value": "openshift-ingress"}},
 			}),
 		})
 
@@ -119,7 +118,6 @@ func TestPatchUsageLogsServiceNamespace(t *testing.T) {
 		g.Expect(found).To(BeTrue())
 		g.Expect(ns).To(Equal("ai-tenant-redteam"))
 
-		// service.name must be left alone.
 		configPatches, _, _ := unstructured.NestedSlice(ef.Object, "spec", "configPatches")
 		patch, _ := configPatches[1].(map[string]any)
 		accessLog, _, _ := unstructured.NestedSlice(patch, "patch", "value", "typed_config", "access_log")
@@ -131,7 +129,7 @@ func TestPatchUsageLogsServiceNamespace(t *testing.T) {
 		g.Expect(name).To(Equal("models-as-a-service"))
 	})
 
-	t.Run("appends when the attribute is absent", func(t *testing.T) {
+	t.Run("appends when resource attributes are absent", func(t *testing.T) {
 		g := NewWithT(t)
 
 		ef := usageLogsEFWithAccessLog([]any{otelAccessLogEntry(nil)})
@@ -152,7 +150,7 @@ func TestPatchUsageLogsServiceNamespace(t *testing.T) {
 				"typed_config": map[string]any{"@type": "type.googleapis.com/FileAccessLog"},
 			},
 			otelAccessLogEntry([]any{
-				map[string]any{"key": "service.namespace", "value": map[string]any{"string_value": "openshift-ingress"}},
+				map[string]any{"key": "service.name", "value": map[string]any{"string_value": "models-as-a-service"}},
 			}),
 		})
 
